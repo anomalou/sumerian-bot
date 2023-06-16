@@ -73,7 +73,7 @@ class SumerianBot(commands.Bot):
         #Bot random phrase reply
         value = random.random()
         if(value > 0.5):
-            await message.channel.send(self.gen_random())
+            await message.channel.send(self.gen_random_sumerian())
             
         pass
     
@@ -190,6 +190,16 @@ class SumerianBot(commands.Bot):
         self.repeat = False
         
         
+    async def show_soundlist(self):
+        result = ""
+        number = 1
+        for sound in os.listdir(self.sound_dir[:-1]):
+            result += f"{number}. {sound}\n"
+        embed = discord.Embed(title="Sound list", description=result, color=discord.Color.dark_blue())
+        await self.main_channel.send(embed=embed)
+        pass
+        
+        
     async def show_playlist(self):
         result = ""
         position = 1
@@ -277,7 +287,7 @@ class SumerianBot(commands.Bot):
         pass
         
         
-    def gen_random(self):
+    def gen_random_sumerian(self):
         length = random.randint(5, 20)
         return self.gen_sumerian(length)
         pass

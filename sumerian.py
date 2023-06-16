@@ -55,8 +55,7 @@ async def shutup(interaction, userID:str):
     
 @sumerianBot.command(name="soundlist", help="Show all sounds in sound folder")
 async def soundlist(interaction:discord.Integration):
-    embed = discord.Embed(title="Sound list", description=os.listdir(sumerianBot.sound_dir[:-1]), color=discord.Color.dark_blue())
-    await sumerianBot.main_channel.send(embed=embed)
+    await sumerianBot.show_soundlist()
     pass
 
 
