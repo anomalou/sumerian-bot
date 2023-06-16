@@ -1,0 +1,3 @@
+python ./sumerian.py
+
+PAUSE
