@@ -88,6 +88,15 @@ class SumerianBot(commands.Bot):
         pass
     
     
+    ##################  ERROR HANDLER  ##################
+    
+    
+    async def on_command_error(self, interaction, error):
+        if isinstance(error, commands.CommandNotFound):
+            embed = discord.Embed(title="Command error!", description="Command not found!", color=discord.Color.red())
+            await interaction.send(embed=embed)
+    
+    
     #######################################################################################################
     ########################    TASK SECTION    ###########################################################
     #######################################################################################################
@@ -247,18 +256,18 @@ class SumerianBot(commands.Bot):
     ##################  PLAYLISTS  ##################
         
         
-    async def show_soundlist(self):
+    def show_soundlist(self) -> discord.Embed:
         sounds = os.listdir(self.sound_dir[:-1])
         result = ""
         number = 1
         for sound in sounds:
             result += f"{number}. {sound}\n"
         embed = discord.Embed(title="Sound list", description=result, color=discord.Color.dark_blue())
-        await self.main_channel.send(embed=embed)
+        return embed
         pass
         
         
-    async def show_playlist(self):
+    def show_playlist(self):
         result = ""
         position = 1
         for sound in self.playlist:
@@ -266,17 +275,19 @@ class SumerianBot(commands.Bot):
             result += string
             position += 1
         
-        await self.main_channel.send(embed=discord.Embed(title="Playlist", description=result, color=discord.Color.purple()))
+        embed = discord.Embed(title="Playlist", description=result, color=discord.Color.purple())
+        
+        return embed
             
         
         
-    async def add_playlist(self, sound):
+    def add_playlist(self, sound) -> discord.Embed:
         self.playlist.append(sound)
-        await self.main_channel.send(embed=discord.Embed(title="Added", description=sound, color=discord.Color.yellow()))
+        return discord.Embed(title="Added", description=sound, color=discord.Color.yellow())
         
         
-    async def show_playlists(self):
-        await self.main_channel.send(embed=discord.Embed(title="Avaible playlists", description=os.listdir(self.playlist_dir[:-1]), color=discord.Color.gold()))
+    def show_playlists(self):
+        return discord.Embed(title="Avaible playlists", description=os.listdir(self.playlist_dir[:-1]), color=discord.Color.gold())
         pass
         
     
@@ -400,7 +411,7 @@ class SumerianBot(commands.Bot):
         try:
             with open(f"{self.week_dir}{weekday}.gif", "rb") as file:
                 image = discord.File(file)
-                await self.main_channel.send(file=image)
+                return image
         except Exception:
             await self.main_channel.send(embed=discord.Embed(title="Sorry!", description="No to celebrate today", color=discord.Color.red()))
         

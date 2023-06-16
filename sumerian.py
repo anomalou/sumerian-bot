@@ -17,7 +17,7 @@ async def sumerian(interaction, length):
     
 @sumerianBot.command(name="echo", help="Echo text as many as you want")
 async def echo(interaction, value, count):
-    for _ in range(int(count)):
+    for _ in range(min(int(count), 10)):
         await interaction.send(value)
         await asyncio.sleep(0.5)
     pass
@@ -25,7 +25,7 @@ async def echo(interaction, value, count):
         
 @sumerianBot.command(name="shutup", help="You know what it do")
 async def shutup(interaction, userID:str):
-    userID = int(userID[2:-1])
+    userID = int(userID[2:-1]) #get user ID by ping tag
     
     member = sumerianBot.findMember(userID, interaction.guild)
     if(member == None):
@@ -36,7 +36,8 @@ async def shutup(interaction, userID:str):
     
 @sumerianBot.command(name="soundlist", help="Show all sounds in sound folder")
 async def soundlist(interaction:discord.Integration):
-    await sumerianBot.show_soundlist()
+    embed = sumerianBot.show_soundlist()
+    await interaction.send(embed=embed)
     pass
 
 
@@ -53,13 +54,14 @@ async def play(interaction:discord.Integration, sound):
     
     if not sound_is_valid[0]:
         embed = discord.Embed(title="Sound not found!", description=f"You typed {sound}. Check name and try again", color=discord.Color.red())
-        await sumerianBot.main_channel.send(embed=embed)
+        await interaction.send(embed=embed)
         return
     
     sound = sound_is_valid[1]
     
     if(sumerianBot.voice != None):
-        await sumerianBot.add_playlist(sound)
+        embed = sumerianBot.add_playlist(sound)
+        await interaction.send(embed=embed)
         await sumerianBot.start_sound()
         return
     
@@ -70,7 +72,8 @@ async def play(interaction:discord.Integration, sound):
         return 
     
     await sumerianBot.connectToVoice(voice)
-    await sumerianBot.add_playlist(sound)
+    embed = sumerianBot.add_playlist(sound)
+    await interaction.send(embed=embed)
     await sumerianBot.start_sound()
     
     pass
@@ -78,7 +81,8 @@ async def play(interaction:discord.Integration, sound):
 
 @sumerianBot.command(name="playlist", help="Current playlist")
 async def playlist(interaction:discord.Integration):
-    await sumerianBot.show_playlist()
+    embed = sumerianBot.show_playlist()
+    await interaction.send(embed=embed)
     pass
 
 
@@ -92,9 +96,9 @@ async def stop(interaction:discord.Integration):
 async def repeat(interaction:discord.Integration):
     sumerianBot.repeat = not sumerianBot.repeat
     if sumerianBot.repeat:
-        await sumerianBot.main_channel.send(embed=discord.Embed(title="Repeat track", description="Is ON now", color=discord.Color.dark_green()))
+        await interaction.send(embed=discord.Embed(title="Repeat track", description="Is ON now", color=discord.Color.dark_green()))
     else:
-        await sumerianBot.main_channel.send(embed=discord.Embed(title="Repeat track", description="Is OFF now", color=discord.Color.dark_red()))
+        await interaction.send(embed=discord.Embed(title="Repeat track", description="Is OFF now", color=discord.Color.dark_red()))
     pass
 
 
@@ -102,9 +106,9 @@ async def repeat(interaction:discord.Integration):
 async def repeat(interaction:discord.Integration):
     sumerianBot.repeat_all = not sumerianBot.repeat_all
     if sumerianBot.repeat_all:
-        await sumerianBot.main_channel.send(embed=discord.Embed(title="Repeat playlist", description="Is ON now", color=discord.Color.dark_green()))
+        await interaction.send(embed=discord.Embed(title="Repeat playlist", description="Is ON now", color=discord.Color.dark_green()))
     else:
-        await sumerianBot.main_channel.send(embed=discord.Embed(title="Repeat playlist", description="Is ON now", color=discord.Color.dark_red()))
+        await interaction.send(embed=discord.Embed(title="Repeat playlist", description="Is OFF now", color=discord.Color.dark_red()))
     pass
 
 
@@ -116,16 +120,17 @@ async def skip(interaction:discord.Integration):
 
 @sumerianBot.command(name="playlists", help="List of avaible playlists")
 async def playlists(interaction:discord.Integration):
-    await sumerianBot.show_playlists()
+    embed = sumerianBot.show_playlists()
+    await interaction.send(embed=embed)
     pass
 
 
 @sumerianBot.command(name="playlist-save", help="Save current playlist with name")
 async def playlist_save(interaction:discord.Integration, name):
     if(sumerianBot.save_playlist(name=name)):
-        await sumerianBot.main_channel.send(embed=discord.Embed(title="Playlist saved!", description=f"Current playlist saved as {name}", color=discord.Color.green()))
+        await interaction.send(embed=discord.Embed(title="Playlist saved!", description=f"Current playlist saved as {name}", color=discord.Color.green()))
     else:
-        await sumerianBot.main_channel.send(embed=discord.Embed(title="Error!", description=f"Failed to save current playlist!", color=discord.Color.red()))
+        await interaction.send(embed=discord.Embed(title="Error!", description=f"Failed to save current playlist!", color=discord.Color.red()))
     pass
 
 
@@ -135,9 +140,9 @@ async def playlist_load(interaction:discord.Integration, name):
         voice = sumerianBot.findVoiceChannel(interaction.author.id, interaction.guild)
         await sumerianBot.connectToVoice(voice)
         await sumerianBot.start_sound()
-        await sumerianBot.main_channel.send(embed=discord.Embed(title="Playlist loaded!", description=f"Current playlist is {name}", color=discord.Color.green()))
+        await interaction.send(embed=discord.Embed(title="Playlist loaded!", description=f"Current playlist is {name}", color=discord.Color.green()))
     else:
-        await sumerianBot.main_channel.send(embed=discord.Embed(title="Error!", description=f"Failed to load playlist {name}!", color=discord.Color.red()))
+        await interaction.send(embed=discord.Embed(title="Error!", description=f"Failed to load playlist {name}!", color=discord.Color.red()))
     pass
 
 
@@ -165,7 +170,8 @@ async def get_anime(interaction:discord.Integration, tags = ""):
     
 @sumerianBot.command(name="whatday", help="What day today?")
 async def what_day(interaction:discord.Integration):
-    await sumerianBot.what_day()
+    image = await sumerianBot.what_day()
+    await interaction.send(file=image)
     pass
 
 # @sumerianBot.command(name="test", help="If i forgot off this do not use")
