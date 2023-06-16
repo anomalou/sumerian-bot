@@ -20,33 +20,14 @@ async def echo(interaction, value, count):
     for _ in range(int(count)):
         await interaction.send(value)
         await asyncio.sleep(0.5)
-    
-def findVoiceChannel(userID:int, guild):
-    for voiceChannel in guild.voice_channels:
-        member = findMemberInChannel(userID, voiceChannel)
-        if(member != None):
-            return voiceChannel
-        
-    return None
-    
-def findMemberInChannel(userID:int, channel:discord.VoiceChannel):
-    for member in channel.members:
-        if(member.id == userID):
-            return member
-    return None
-
-def findMember(userID:int, guild):
-    for voiceChannel in guild.voice_channels:
-        member = findMemberInChannel(userID, voiceChannel)
-        if(member != None):
-            return member
+    pass
     
         
 @sumerianBot.command(name="shutup", help="You know what it do")
 async def shutup(interaction, userID:str):
     userID = int(userID[2:-1])
     
-    member = findMember(userID, interaction.guild)
+    member = sumerianBot.findMember(userID, interaction.guild)
     if(member == None):
         return
     
@@ -79,9 +60,10 @@ async def play(interaction:discord.Integration, sound):
     
     if(sumerianBot.voice != None):
         await sumerianBot.add_playlist(sound)
+        await sumerianBot.start_sound()
         return
     
-    voice = findVoiceChannel(interaction.author.id, interaction.guild)
+    voice = sumerianBot.findVoiceChannel(interaction.author.id, interaction.guild)
     
     if voice == None:
         await sumerianBot.main_channel.send(f"# {sumerianBot.gen_random()}")
@@ -150,7 +132,7 @@ async def playlist_save(interaction:discord.Integration, name):
 @sumerianBot.command(name="playlist-load", help="Load playlist with name")
 async def playlist_load(interaction:discord.Integration, name):
     if(sumerianBot.load_playlist(name=name)):
-        voice = findVoiceChannel(interaction.author.id, interaction.guild)
+        voice = sumerianBot.findVoiceChannel(interaction.author.id, interaction.guild)
         await sumerianBot.connectToVoice(voice)
         await sumerianBot.start_sound()
         await sumerianBot.main_channel.send(embed=discord.Embed(title="Playlist loaded!", description=f"Current playlist is {name}", color=discord.Color.green()))
@@ -178,6 +160,13 @@ async def roflmode(interaction:discord.Integration, state):
 @sumerianBot.command(name="anime", help="Get anime pic (also hentai)")
 async def get_anime(interaction:discord.Integration, tags = ""):
     await sumerianBot.get_anime(tags)
+    pass
+    
+    
+@sumerianBot.command(name="whatday", help="What day today?")
+async def what_day(interaction:discord.Integration):
+    await sumerianBot.what_day()
+    pass
 
 # @sumerianBot.command(name="test", help="If i forgot off this do not use")
 # async def test(interaction:discord.Integration):

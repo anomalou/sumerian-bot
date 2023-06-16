@@ -2,6 +2,7 @@ from discord.ext import commands
 from discord.ext import tasks
 from collections import deque
 from waifuim import WaifuAioClient
+from datetime import date
 import os
 import random
 import discord
@@ -23,8 +24,14 @@ class SumerianBot(commands.Bot):
     
     sound_dir = "sounds/"
     playlist_dir = "playlists/"
+    week_dir = "week/"
     
-    wf = WaifuAioClient()
+    waifuClient = WaifuAioClient()
+    
+    #######################################################################################################
+    ########################    BASE SECTION    ###########################################################
+    #######################################################################################################
+    
     
     async def on_ready(self):
         self.sounds = os.getenv("JUMPSCARE_SND").split(",")
@@ -43,6 +50,9 @@ class SumerianBot(commands.Bot):
             self.jumpscare.start()
         
         print(f"{self.user} has connected!")
+        
+        
+    ##################  MESSAGES  ##################
         
         
     async def on_message(self, message, /) -> None:
@@ -78,6 +88,12 @@ class SumerianBot(commands.Bot):
         pass
     
     
+    #######################################################################################################
+    ########################    TASK SECTION    ###########################################################
+    #######################################################################################################
+    
+    ##################  JUMPSCARE  ##################
+    
     @tasks.loop(hours=2, count=None)
     async def jumpscare(self):
         channels = []
@@ -90,8 +106,10 @@ class SumerianBot(commands.Bot):
             await self.gen_sound(random.choice(channels))
         else:
             print("Jumpscare failed! I will try later")
-        
         pass
+    
+    
+    ##################  SOUND PLAYING  ##################
     
 
     @tasks.loop(seconds=1, count=None)
@@ -110,12 +128,45 @@ class SumerianBot(commands.Bot):
             await asyncio.sleep(2)
         
         if(not self.repeat):
-            self.playlist.popleft()
+            if(len(self.playlist) > 0):
+                self.playlist.popleft()
             
             if(self.repeat_all):
                 self.playlist.append(next_sound)
-        
+                
+        if(len(self.playlist) <= 0):
+            self.playing.stop()
         pass
+    
+    
+    #######################################################################################################
+    ########################    FUNCTIONS SECTION    ######################################################
+    #######################################################################################################
+    
+    ##################  UTILITY  ##################
+    
+    def findVoiceChannel(self, userID:int, guild):
+        for voiceChannel in guild.voice_channels:
+            member = self.findMemberInChannel(userID, voiceChannel)
+            if(member != None):
+                return voiceChannel
+            
+        return None
+    
+    def findMemberInChannel(self, userID:int, channel:discord.VoiceChannel):
+        for member in channel.members:
+            if(member.id == userID):
+                return member
+        return None
+
+    def findMember(self, userID:int, guild):
+        for voiceChannel in guild.voice_channels:
+            member = self.findMemberInChannel(userID, voiceChannel)
+            if(member != None):
+                return member
+    
+    
+    ##################  SOUND WORK  ##################
     
           
     async def gen_sound(self, channel):
@@ -138,20 +189,6 @@ class SumerianBot(commands.Bot):
         self.voice = None
         pass
     
-    
-    def download_sound_YT(self, url, name):
-        ydl_opts = {
-            'format': 'bestaudio/best',
-            'postprocessors': [{
-                'key': 'FFmpegExtractAudio',
-                'preferredcodec': 'mp3',
-                'preferredquality': '192',
-            }],
-            'outtmpl': f'{self.sound_dir}{name}.mp3',
-        }
-        
-        with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([url])
             
     def check_sound(self, sound:str):
         sounds = os.listdir(self.sound_dir[:-1])
@@ -178,22 +215,43 @@ class SumerianBot(commands.Bot):
     
         
     async def start_sound(self):
-        self.playing.start()
+        if(not self.playing.is_running()):
+            self.playing.start()
+        pass
         
         
     async def stop_sound(self):
         if(self.voice == None):
             return
         
+        self.playlist.clear()
         self.voice.stop()
-        self.playing.stop()
         self.repeat = False
         
         
+    async def skip_sound(self):
+        if(self.voice == None):
+            return
+        
+        if(len(self.playlist) <= 0):
+            return
+        
+        sound = self.playlist[0]
+            
+        self.voice.stop()
+        
+        await self.main_channel.send(embed=discord.Embed(title="Skipped", description=sound, color=discord.Color.red()))
+        pass
+    
+    
+    ##################  PLAYLISTS  ##################
+        
+        
     async def show_soundlist(self):
+        sounds = os.listdir(self.sound_dir[:-1])
         result = ""
         number = 1
-        for sound in os.listdir(self.sound_dir[:-1]):
+        for sound in sounds:
             result += f"{number}. {sound}\n"
         embed = discord.Embed(title="Sound list", description=result, color=discord.Color.dark_blue())
         await self.main_channel.send(embed=embed)
@@ -251,21 +309,7 @@ class SumerianBot(commands.Bot):
         return True
         
         
-    async def skip_sound(self):
-        if(self.voice == None):
-            return
-        
-        if(len(self.playlist) <= 0):
-            return
-        
-        sound = self.playlist[0]
-        
-        if(self.repeat):
-            self.playlist.popleft()
-            
-        self.voice.stop()
-        
-        await self.main_channel.send(embed=discord.Embed(title="Skipped", description=sound, color=discord.Color.red()))
+    ##################  VOICE  ##################
         
         
     async def connectToVoice(self, channel):
@@ -279,12 +323,17 @@ class SumerianBot(commands.Bot):
         if(self.voice == None):
             return
         
-        self.playing.stop()
+        if(self.playing.is_running()):
+            self.playing.stop()
+            
         await self.voice.disconnect()
         self.voice = None
         self.playlist.clear()
         
         pass
+        
+        
+    ##################  OTHERS  ##################
         
         
     def gen_random_sumerian(self):
@@ -304,6 +353,22 @@ class SumerianBot(commands.Bot):
         result += random.choice(sign)
         
         return result
+        pass
+    
+    
+    def download_sound_YT(self, url, name):
+        ydl_opts = {
+            'format': 'bestaudio/best',
+            'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'mp3',
+                'preferredquality': '192',
+            }],
+            'outtmpl': f'{self.sound_dir}{name}.mp3',
+        }
+        
+        with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+            ydl.download([url])
         
         
     async def get_anime(self, tags:str):
@@ -313,17 +378,31 @@ class SumerianBot(commands.Bot):
             tags = tags.replace(" ", "")
             tags = tags.split(",")
             try:
-                image = await self.wf.search(included_tags=tags)
-            except:
+                image = await self.waifuClient.search(included_tags=tags)
+            except Exception:
                 await self.main_channel.send(embed=discord.Embed(title="Error!", description="Typed tag is incorrect!", color=discord.Color.red()))
         else:
-            image = await self.wf.search()
+            image = await self.waifuClient.search()
+            
+        if(image == None):
+            return
             
         embed = discord.Embed(title="Picture", description=tags, type="image", color=discord.Color.blurple())
         embed.set_image(url=image.url)
         await self.main_channel.send(embed=embed)
         
         print(f"Picture loaded: {image.url}")
+        
+    async def what_day(self):
+        today = date.today()
+        weekday = today.weekday()
+        
+        try:
+            with open(f"{self.week_dir}{weekday}.gif", "rb") as file:
+                image = discord.File(file)
+                await self.main_channel.send(file=image)
+        except Exception:
+            await self.main_channel.send(embed=discord.Embed(title="Sorry!", description="No to celebrate today", color=discord.Color.red()))
         
         
         
