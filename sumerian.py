@@ -176,6 +176,10 @@ async def roflmode(interaction:discord.Integration, state):
     pass        
 
 
+@sumerianBot.command(name="anime", help="Get anime pic (also hentai)")
+async def get_anime(interaction:discord.Integration, tags = ""):
+    await sumerianBot.get_anime(tags)
+
 # @sumerianBot.command(name="test", help="If i forgot off this do not use")
 # async def test(interaction:discord.Integration):
 #     sumerianBot.check_sound("")

@@ -1,6 +1,7 @@
 from discord.ext import commands
 from discord.ext import tasks
 from collections import deque
+from waifuim import WaifuAioClient
 import os
 import random
 import discord
@@ -20,14 +21,16 @@ class SumerianBot(commands.Bot):
     main_guild = None
     main_channel = None
     
-    sounds = os.getenv("JUMPSCARE_SND").split(",")
-    call_word = os.getenv("CALL_PHRASE").split(",")
-    kill_word = os.getenv("KILL_PHRASE").split(",")
-    
     sound_dir = "sounds/"
     playlist_dir = "playlists/"
     
+    wf = WaifuAioClient()
+    
     async def on_ready(self):
+        self.sounds = os.getenv("JUMPSCARE_SND").split(",")
+        self.call_word = os.getenv("CALL_PHRASE").split(",")
+        self.kill_word = os.getenv("KILL_PHRASE").split(",")
+        
         for guild in self.guilds:
             if(guild.id == int(os.getenv("GUILD_ID"))):
                 self.main_guild = guild
@@ -291,4 +294,26 @@ class SumerianBot(commands.Bot):
         result += random.choice(sign)
         
         return result
+        
+        
+    async def get_anime(self, tags:str):
+        image = None
+        
+        if(len(tags) != 0):
+            tags = tags.replace(" ", "")
+            tags = tags.split(",")
+            try:
+                image = await self.wf.search(included_tags=tags)
+            except:
+                await self.main_channel.send(embed=discord.Embed(title="Error!", description="Typed tag is incorrect!", color=discord.Color.red()))
+        else:
+            image = await self.wf.search()
+            
+        embed = discord.Embed(title="Picture", description=tags, type="image", color=discord.Color.blurple())
+        embed.set_image(url=image.url)
+        await self.main_channel.send(embed=embed)
+        
+        print(f"Picture loaded: {image.url}")
+        
+        
         
