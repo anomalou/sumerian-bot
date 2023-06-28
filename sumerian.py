@@ -88,7 +88,7 @@ async def playlist(interaction:discord.Integration):
 
 @sumerianBot.command(name="stop", help="Stop sound playing")
 async def stop(interaction:discord.Integration):
-    await sumerianBot.stop_sound()
+    await sumerianBot.stop_playing()
     pass
     
     
@@ -118,7 +118,25 @@ async def skip(interaction:discord.Integration):
     pass
 
 
-@sumerianBot.command(name="playlists", help="List of avaible playlists")
+@sumerianBot.command(name="pause", help="Pause current sound")
+async def pause(interaction:discord.Integration):
+    if sumerianBot.pause_sound():
+        await interaction.send(embed=discord.Embed(title="Sound is paused", description=sumerianBot.playlist[0], color=discord.Color.yellow()))
+    else:
+        await interaction.send(embed=discord.Embed(title="Error!", description="Can't pause the sound! Is even playing?", color=discord.Color.red()))
+    pass
+
+
+@sumerianBot.command(name="resume", help="Resume current sound")
+async def pause(interaction:discord.Integration):
+    if sumerianBot.resume_sound():
+        await interaction.send(embed=discord.Embed(title="Sound is resumed!", description=sumerianBot.playlist[0], color=discord.Color.green()))
+    else:
+        await interaction.send(embed=discord.Embed(title="Error!", description="Can't resume the sound! Is even paused?", color=discord.Color.red()))
+    pass
+
+
+@sumerianBot.command(name="playlists", help="List of available playlists")
 async def playlists(interaction:discord.Integration):
     embed = sumerianBot.show_playlists()
     await interaction.send(embed=embed)

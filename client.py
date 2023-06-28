@@ -133,8 +133,8 @@ class SumerianBot(commands.Bot):
         await self.main_channel.send(embed=discord.Embed(title="Playing", description=next_sound, color=discord.Color.green()))
         print(f"Playing: {next_sound}")
         
-        while(self.voice.is_playing()):
-            await asyncio.sleep(2)
+        while(self.voice.is_playing() or self.voice.is_paused()):
+            await asyncio.sleep(1)
         
         if(not self.repeat):
             if(len(self.playlist) > 0):
@@ -229,13 +229,44 @@ class SumerianBot(commands.Bot):
         pass
         
         
-    async def stop_sound(self):
+    async def stop_playing(self):
         if(self.voice == None):
             return
         
         self.playlist.clear()
         self.voice.stop()
         self.repeat = False
+        
+        
+    def stop_sound(self):
+        if(self.voice == None):
+            return
+        
+        if(self.voice.is_playing()):
+            self.voice.stop()
+            
+    def pause_sound(self):
+        if(self.voice == None):
+            return
+        
+        if not self.voice.is_paused():   
+            self.voice.pause()
+            return True
+        else:
+            return False
+        pass
+    
+    
+    def resume_sound(self):
+        if(self.voice == None):
+            return
+        
+        if self.voice.is_paused():
+            self.voice.resume()
+            return True
+        else:
+            return False
+        pass
         
         
     async def skip_sound(self):
@@ -271,9 +302,11 @@ class SumerianBot(commands.Bot):
         result = ""
         position = 1
         for sound in self.playlist:
-            string = f"{position}: {sound}\n"
+            string = f"{position}. {sound}"
             result += string
-            position += 1
+            if(self.playlist.index(sound) == 0):
+                result += " - :loud_sound:"
+            result += "\n"
         
         embed = discord.Embed(title="Playlist", description=result, color=discord.Color.purple())
         
@@ -287,7 +320,7 @@ class SumerianBot(commands.Bot):
         
         
     def show_playlists(self):
-        return discord.Embed(title="Avaible playlists", description=os.listdir(self.playlist_dir[:-1]), color=discord.Color.gold())
+        return discord.Embed(title="Available playlists", description=os.listdir(self.playlist_dir[:-1]), color=discord.Color.gold())
         pass
         
     
@@ -309,7 +342,6 @@ class SumerianBot(commands.Bot):
         try:
             file = open(f"{self.playlist_dir}{name}", "r")
             playlist = file.readlines()
-            self.playlist.clear()
             for sound in playlist:
                 self.playlist.append(sound[:-1])
                 
@@ -334,12 +366,16 @@ class SumerianBot(commands.Bot):
         if(self.voice == None):
             return
         
-        if(self.playing.is_running()):
-            self.playing.stop()
+        self.playlist.clear()    
             
+        if(self.voice.is_playing()):
+            self.voice.stop()
+            
+        while self.playing.is_running():
+            await asyncio.sleep(1)    
+        
         await self.voice.disconnect()
         self.voice = None
-        self.playlist.clear()
         
         pass
         
