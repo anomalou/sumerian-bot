@@ -196,8 +196,8 @@ async def what_day(context:discord.ext.commands.Context):
     pass
 
 
-@sumerianBot.command(name="test", help="If i forgot off this do not use")
-async def test(context:discord.ext.commands.Context):
+@sumerianBot.command(name="player", help="Create new player")
+async def player(context:discord.ext.commands.Context):
     view = Player(sumerianBot)
     
     try:
@@ -205,6 +205,11 @@ async def test(context:discord.ext.commands.Context):
     except Exception as ex:
         print(ex)
     pass
+
+
+# @sumerianBot.command(name="test", help="If i forgot off this do not use")
+# async def test(context:discord.ext.commands.Context):
+#     pass
 
             
 sumerianBot.run(TOKEN)
