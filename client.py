@@ -3,11 +3,14 @@ from discord.ext import tasks
 from collections import deque
 from waifuim import WaifuAioClient
 from datetime import date
+import math
 import os
 import random
 import discord
 import asyncio
-import youtube_dl
+# import youtube_dl
+import audio_metadata
+import datetime
 
 
 class SumerianBot(commands.Bot):
@@ -21,6 +24,8 @@ class SumerianBot(commands.Bot):
     
     main_guild = None
     main_channel = None
+    
+    control_message = None
     
     sound_dir = "sounds/"
     playlist_dir = "playlists/"
@@ -128,10 +133,7 @@ class SumerianBot(commands.Bot):
             
         next_sound = self.playlist[0]
         
-        self.play_sound(next_sound)
-            
-        await self.main_channel.send(embed=discord.Embed(title="Playing", description=next_sound, color=discord.Color.green()))
-        print(f"Playing: {next_sound}")
+        await self.play_sound(next_sound)
         
         while(self.voice.is_playing() or self.voice.is_paused()):
             await asyncio.sleep(1)
@@ -211,7 +213,7 @@ class SumerianBot(commands.Bot):
         pass
     
         
-    def play_sound(self, sound):
+    async def play_sound(self, sound):
         if(self.voice == None):
             return
             
@@ -219,8 +221,30 @@ class SumerianBot(commands.Bot):
             return
         
         self.voice.play(source=discord.FFmpegPCMAudio(executable="util/ffmpeg.exe", source=f"{self.sound_dir}{sound}"))
+        
+        metadata = self.get_sound_metadata(sound=sound)
+        
+        duration = "TNG"
+        
+        if metadata != None:
+            duration = datetime.timedelta(seconds=math.ceil(metadata.streaminfo.duration))
+        
+        await self.main_channel.send(embed=discord.Embed(title="Playing", description=f"{sound}({duration})", color=discord.Color.green()))
+        print(f"Playing: {sound}({duration})")
             
         pass
+    
+    
+    def get_sound_metadata(self, sound):
+        try:
+            metadata = audio_metadata.load(f"{self.sound_dir}{sound}")
+        except Exception as ex:
+            print(ex)
+            return None
+        
+        print(metadata)
+        
+        return metadata
     
         
     async def start_sound(self):
@@ -245,12 +269,17 @@ class SumerianBot(commands.Bot):
         if(self.voice.is_playing()):
             self.voice.stop()
             
+        print("Sound stoped")
+        pass
+        
+            
     def pause_sound(self):
         if(self.voice == None):
             return
         
         if not self.voice.is_paused():   
             self.voice.pause()
+            print(f"{self.playlist[0]} is paused")
             return True
         else:
             return False
@@ -263,13 +292,14 @@ class SumerianBot(commands.Bot):
         
         if self.voice.is_paused():
             self.voice.resume()
+            print(f"{self.playlist[0]} is resumed")
             return True
         else:
             return False
         pass
         
         
-    async def skip_sound(self):
+    def skip_sound(self):
         if(self.voice == None):
             return
         
@@ -280,8 +310,8 @@ class SumerianBot(commands.Bot):
             
         self.voice.stop()
         
-        await self.main_channel.send(embed=discord.Embed(title="Skipped", description=sound, color=discord.Color.red()))
-        pass
+        print(f"{self.playlist[0]} is skipped")
+        return discord.Embed(title="Skipped", description=sound, color=discord.Color.red())
     
     
     ##################  PLAYLISTS  ##################
@@ -351,7 +381,6 @@ class SumerianBot(commands.Bot):
         
         return True
         
-        
     ##################  VOICE  ##################
         
         
@@ -372,7 +401,7 @@ class SumerianBot(commands.Bot):
             self.voice.stop()
             
         while self.playing.is_running():
-            await asyncio.sleep(1)    
+            await asyncio.sleep(1)
         
         await self.voice.disconnect()
         self.voice = None
@@ -403,19 +432,19 @@ class SumerianBot(commands.Bot):
         pass
     
     
-    def download_sound_YT(self, url, name):
-        ydl_opts = {
-            'format': 'bestaudio/best',
-            'postprocessors': [{
-                'key': 'FFmpegExtractAudio',
-                'preferredcodec': 'mp3',
-                'preferredquality': '192',
-            }],
-            'outtmpl': f'{self.sound_dir}{name}.mp3',
-        }
+    # def download_sound_YT(self, url, name):
+    #     ydl_opts = {
+    #         'format': 'bestaudio/best',
+    #         'postprocessors': [{
+    #             'key': 'FFmpegExtractAudio',
+    #             'preferredcodec': 'mp3',
+    #             'preferredquality': '192',
+    #         }],
+    #         'outtmpl': f'{self.sound_dir}{name}.mp3',
+    #     }
         
-        with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([url])
+    #     with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+    #         ydl.download([url])
         
         
     async def get_anime(self, tags:str):
